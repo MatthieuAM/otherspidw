@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LuckyX - Responsive Game Lobby</title>
+  <style>
+    :root {
+      --bg-deep: #170022;
+      --bg-mid: #2a0340;
+      --bg-light: #4f0e74;
+      --surface: rgba(255,255,255,0.12);
+      --surface-2: rgba(255,255,255,0.08);
+      --stroke: rgba(255,255,255,0.16);
+      --text: #fff8ff;
+      --muted: #f1ddff;
+      --pink: #ff4fd8;
+      --pink-2: #ff82ea;
+      --gold: #ffd54a;
+      --gold-2: #ffb800;
+      --cyan: #58e8ff;
+      --violet: #8c58ff;
+      --green: #8cffb1;
+      --shadow-xl: 0 26px 80px rgba(21, 0, 32, 0.4);
+      --shadow-lg: 0 18px 44px rgba(26, 0, 38, 0.34);
+      --radius-xl: 34px;
+      --radius-lg: 26px;
+      --radius-md: 20px;
+      --radius-sm: 16px;
+      --desktop-max: 1480px;
+      --sidebar-w: 250px;
+      --right-w: 320px;
+      --mobile-shell: 430px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 15%, rgba(255,79,216,0.28), transparent 18%),
+        radial-gradient(circle at 85% 10%, rgba(88,232,255,0.18), transparent 18%),
+        radial-gradient(circle at 50% 100%, rgba(255,213,74,0.12), transparent 22%),
+        linear-gradient(180deg, #4b0d71 0%, #27003e 45%, #12001d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      background:
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.09) 0 2px, transparent 3px),
+        radial-gradient(circle at 78% 22%, rgba(255,255,255,0.08) 0 2px, transparent 3px),
+        radial-gradient(circle at 62% 72%, rgba(255,255,255,0.08) 0 2px, transparent 3px),
+        radial-gradient(circle at 35% 32%, rgba(255,255,255,0.07) 0 2px, transparent 3px);
+      background-size: 280px 280px, 340px 340px, 260px 260px, 320px 320px;
+      animation: sparkle 10s linear infinite;
+      opacity: 0.8;
+    }
+
+    body::after {
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent 22%);
+    }
+
+    @keyframes sparkle {
+      from { transform: translateY(0); }
+      to { transform: translateY(24px); }
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    .desktop-app {
+      max-width: var(--desktop-max);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--right-w);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .glass {
+      background: linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.07));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .sidebar,
+    .rightbar,
+    .content-wrap {
+      border-radius: 32px;
+      padding: 18px;
+    }
+
+    .sidebar,
+    .rightbar {
+      position: sticky;
+      top: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .brand-mark {
+      width: 50px;
+      height: 50px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 1.4rem;
+      background: linear-gradient(145deg, #ff62dd, #8d57ff 70%, #58e8ff);
+      box-shadow: 0 12px 24px rgba(141, 87, 255, 0.35);
+    }
+
+    .brand strong, .brand span { display: block; }
+    .brand strong { font-size: 1rem; }
+    .brand span { color: var(--muted); font-size: 0.82rem; }
+
+    .nav {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 800;
+      transition: 0.18s ease;
+      text-align: left;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      transform: translateY(-2px);
+      border-color: var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08));
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(145deg, rgba(255,213,74,0.28), rgba(255,79,216,0.18));
+    }
+
+    .nav-btn small {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.74rem;
+    }
+
+    .mini-panel {
+      margin-top: 16px;
+      border-radius: 22px;
+      padding: 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--stroke);
+    }
+
+    .mini-panel h3,
+    .widget h3,
+    .card-title {
+      margin: 0 0 8px;
+      font-size: 0.98rem;
+      letter-spacing: -0.02em;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .progress {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.12);
+      margin-top: 10px;
+    }
+
+    .progress > div {
+      height: 100%;
+      width: 72%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffd95c, #ff58da);
+      box-shadow: 0 0 16px rgba(255,88,218,0.45);
+    }
+
+    .content-wrap {
+      padding: 16px;
+      min-height: calc(100vh - 36px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .player-chip,
+    .currency-chip,
+    .top-action {
+      border-radius: 18px;
+      border: 1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    .player-chip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+      border: 1px solid rgba(255,255,255,0.16);
+      font-size: 1.2rem;
+      flex: 0 0 auto;
+    }
+
+    .player-chip strong, .player-chip span { display: block; }
+    .player-chip strong { font-size: 0.95rem; }
+    .player-chip span { font-size: 0.76rem; color: var(--muted); }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .currency-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      font-weight: 900;
+    }
+
+    .coin {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 30% 30%, #fff4b1, var(--gold));
+      color: #7b4a00;
+      box-shadow: 0 6px 16px rgba(255,213,74,0.35);
+      font-size: 0.92rem;
+    }
+
+    .top-action {
+      padding: 10px 14px;
+      cursor: pointer;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .screen {
+      display: none;
+      gap: 16px;
+    }
+
+    .screen.active { display: grid; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 30px;
+      padding: 22px;
+      min-height: 280px;
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 28%),
+        linear-gradient(145deg, #ff4fd8 0%, #9d4dff 52%, #5f45ff 100%);
+      box-shadow: 0 24px 50px rgba(109, 32, 152, 0.35);
+      border: 1px solid rgba(255,255,255,0.18);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: -20px;
+      bottom: -30px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,213,74,0.6), transparent 68%);
+      filter: blur(8px);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.16);
+      font-size: 0.78rem;
+      font-weight: 900;
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.3rem);
+      line-height: 0.92;
+      letter-spacing: -0.05em;
+      max-width: 460px;
+      text-shadow: 0 4px 14px rgba(44, 0, 70, 0.25);
+    }
+
+    .hero p {
+      margin: 12px 0 16px;
+      max-width: 520px;
+      color: rgba(255,255,255,0.95);
+      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .hero-pill,
+    .floating-card {
+      border-radius: 20px;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    .hero-pill {
+      padding: 12px 14px;
+      min-width: 130px;
+    }
+
+    .hero-pill span, .hero-pill strong { display: block; }
+    .hero-pill span { font-size: 0.74rem; opacity: 0.9; }
+    .hero-pill strong { margin-top: 4px; font-size: 1rem; }
+
+    .cta-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 18px;
+      padding: 13px 16px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.18s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .btn:hover { transform: translateY(-2px) scale(1.01); }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #ffd95c, #ffb800);
+      color: #5a2e00;
+      box-shadow: 0 12px 24px rgba(255,184,0,0.32);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: var(--text);
+    }
+
+    .hero-side {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+    }
+
+    .floating-card {
+      width: 100%;
+      max-width: 260px;
+      padding: 16px;
+      box-shadow: 0 16px 30px rgba(20,0,32,0.2);
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .pet {
+      font-size: 4rem;
+      line-height: 1;
+      animation: bob 1.8s ease-in-out infinite;
+      margin-bottom: 6px;
+    }
+
+    @keyframes bob {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-7px); }
+    }
+
+    .floating-card strong, .floating-card span { display: block; }
+    .floating-card strong { font-size: 1.08rem; }
+    .floating-card span { font-size: 0.78rem; color: rgba(255,255,255,0.92); margin-top: 3px; }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: -0.03em;
+    }
+
+    .section-head span {
+      color: var(--muted);
+      font-size: 0.79rem;
+      font-weight: 800;
+    }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mode-card,
+    .widget,
+    .ticket-panel,
+    .scratch-panel,
+    .market-panel,
+    .rewards-panel {
+      border-radius: 24px;
+      padding: 16px;
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .widget,
+    .ticket-panel,
+    .scratch-panel,
+    .market-panel,
+    .rewards-panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.08));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .mode-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 165px;
+      cursor: pointer;
+      transition: transform 0.18s ease;
+    }
+
+    .mode-card:hover { transform: translateY(-2px) rotate(-0.25deg); }
+
+    .mode-card h3 {
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      max-width: 150px;
+    }
+
+    .mode-card p {
+      margin: 8px 0 0;
+      font-size: 0.84rem;
+      line-height: 1.4;
+      max-width: 180px;
+    }
+
+    .mode-card .bubble {
+      position: absolute;
+      right: 14px;
+      bottom: 10px;
+      font-size: 2.6rem;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,0.16));
+    }
+
+    .mode-card.lottery { background: linear-gradient(145deg, #6d4bff, #b44bff); }
+    .mode-card.scratch { background: linear-gradient(145deg, #ff7a4b, #ff4fc6); }
+    .mode-card.predict { background: linear-gradient(145deg, #02c7c9, #4f8dff); }
+    .mode-card.rewards { background: linear-gradient(145deg, #ffa52c, #ffd84f); color: #6f3f00; }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .badge-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.08));
+      font-size: 1.08rem;
+    }
+
+    .list-item strong, .list-item span { display: block; }
+    .list-item strong { font-size: 0.92rem; }
+    .list-item span { font-size: 0.77rem; color: var(--muted); margin-top: 3px; }
+
+    .ticket-top,
+    .reward-counters {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .mini-box {
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.14);
+      text-align: center;
+    }
+
+    .mini-box span, .mini-box strong { display: block; }
+    .mini-box span { color: var(--muted); font-size: 0.76rem; }
+    .mini-box strong { margin-top: 5px; font-size: 1.04rem; }
+
+    .ticket-summary {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-height: 42px;
+      margin: 14px 0 10px;
+    }
+
+    .ticket-chip {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #ffe78a, #ffbf36);
+      color: #6a3700;
+      font-weight: 900;
+      box-shadow: 0 8px 16px rgba(255,191,54,0.28);
+    }
+
+    .ticket-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0,1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .number {
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      font-weight: 900;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+      transition: transform 0.16s ease;
+    }
+
+    .number:hover { transform: translateY(-2px); }
+
+    .number.selected {
+      background: linear-gradient(180deg, #ffda5e, #ff9d00);
+      color: #6a2f00;
+      box-shadow: 0 10px 18px rgba(255,157,0,0.35);
+    }
+
+    .scratch-card {
+      margin-top: 14px;
+      border-radius: 24px;
+      padding: 18px;
+      background: linear-gradient(145deg, #ff7d52, #ff4ecc 70%);
+      border: 1px solid rgba(255,255,255,0.16);
+      text-align: center;
+      box-shadow: 0 18px 34px rgba(189, 53, 115, 0.3);
+    }
+
+    .scratch-overlay {
+      margin-top: 14px;
+      border-radius: 22px;
+      padding: 28px 16px;
+      background: linear-gradient(145deg, #edf0f4, #adb4c7);
+      color: #3c4050;
+      font-size: 1.25rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: inset 0 3px 8px rgba(255,255,255,0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scratch-overlay::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(135deg, rgba(255,255,255,0.22) 0 10px, rgba(0,0,0,0.03) 10px 20px);
+      mix-blend-mode: screen;
+    }
+
+    .scratch-overlay.revealed {
+      background: linear-gradient(145deg, #ffe06b, #ff8d2e);
+      color: #6c3200;
+    }
+
+    .market-card,
+    .reward-banner {
+      margin-top: 14px;
+      border-radius: 20px;
+      padding: 14px;
+    }
+
+    .market-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .market-options {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .market-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.14);
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .market-option.active {
+      background: linear-gradient(145deg, rgba(255,213,74,0.28), rgba(255,79,216,0.22));
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    .reward-banner {
+      background: linear-gradient(145deg, #ffb12c, #ffd95b);
+      color: #6e3b00;
+      box-shadow: 0 16px 28px rgba(255,177,44,0.25);
+    }
+
+    .reward-banner h3 { margin: 0; font-size: 1.1rem; letter-spacing: -0.04em; }
+    .reward-banner p { margin: 6px 0 0; font-size: 0.84rem; line-height: 1.35; }
+
+    .rightbar .widget + .widget { margin-top: 16px; }
+
+    .mobile-app {
+      display: none;
+      max-width: var(--mobile-shell);
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .phone-shell {
+      position: relative;
+      min-height: calc(100vh - 28px);
+      border-radius: 40px;
+      padding: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: var(--shadow-xl);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .phone-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255,255,255,0.12), transparent 18%),
+        radial-gradient(circle at 0% 60%, rgba(89,232,255,0.12), transparent 24%),
+        radial-gradient(circle at 100% 100%, rgba(255,79,216,0.15), transparent 22%);
+      pointer-events: none;
+    }
+
+    .mobile-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .mobile-topbar .player-chip { flex: 1; }
+
+    .mobile-currencies {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .screen.mobile-screen { position: relative; z-index: 1; }
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 14px;
+      width: min(420px, calc(100% - 20px));
+      display: none;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      padding: 10px;
+      border-radius: 28px;
+      background: rgba(40, 0, 64, 0.85);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 18px 30px rgba(20, 0, 32, 0.35);
+      z-index: 30;
+    }
+
+    .bottom-nav button {
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,0.82);
+      border-radius: 18px;
+      padding: 10px 4px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1.05;
+      transition: 0.16s ease;
+    }
+
+    .bottom-nav button.active {
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.1));
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .desktop-only { display: block; }
+    .mobile-only { display: none; }
+
+    @media (max-width: 1180px) {
+      .desktop-app {
+        grid-template-columns: 220px minmax(0, 1fr);
+      }
+      .rightbar { display: none; }
+      .home-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 860px) {
+      .desktop-app { display: none; }
+      .mobile-app { display: block; }
+      .bottom-nav { display: grid; }
+      .desktop-only { display: none; }
+      .mobile-only { display: block; }
+    }
+
+    @media (max-width: 720px) {
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+      .game-grid,
+      .ticket-grid,
+      .ticket-top,
+      .reward-counters {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+      .cta-row { flex-direction: column; }
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .top-right { justify-content: flex-start; }
+    }
+
+    @media (max-width: 520px) {
+      .shell { padding: 10px; }
+      .game-grid,
+      .ticket-grid,
+      .ticket-top,
+      .reward-counters {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+      .hero h1 { font-size: 2rem; }
+      .content-wrap,
+      .sidebar,
+      .rightbar { border-radius: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="desktop-app">
+      <aside class="sidebar glass">
+        <div class="brand">
+          <div class="brand-mark">🎮</div>
+          <div>
+            <strong>LuckyX Universe</strong>
+            <span>Arcade lottery platform</span>
+          </div>
+        </div>
+
+        <div class="nav">
+          <button class="nav-btn active" data-go="home"><span>🏠 Hub</span><small>Lobby</small></button>
+          <button class="nav-btn primary" data-go="loterie"><span>🎟 Loterie</span><small>Main mode</small></button>
+          <button class="nav-btn" data-go="jeux"><span>🪄 Scratch</span><small>Instant fun</small></button>
+          <button class="nav-btn" data-go="predictions"><span>⚔️ Clash</span><small>Predictions</small></button>
+          <button class="nav-btn" data-go="rewards"><span>🎁 Shop</span><small>Rewards</small></button>
+        </div>
+
+        <div class="mini-panel">
+          <h3>Mission du jour</h3>
+          <div class="muted">Joue 1 ticket, fais 1 prediction, ouvre 1 coffre.</div>
+          <div class="progress"><div></div></div>
+        </div>
+
+        <div class="mini-panel">
+          <h3>Buddy boost</h3>
+          <div class="muted">🐶 Buddy augmente ta luck de +12% aujourd’hui.</div>
+        </div>
+      </aside>
+
+      <main class="content-wrap glass">
+        <div class="topbar">
+          <div class="player-chip">
+            <div class="avatar">😎</div>
+            <div>
+              <strong>Lucky Alex</strong>
+              <span>Arène 7 • Chasseur de jackpots</span>
+            </div>
+          </div>
+
+          <div class="top-right">
+            <div class="currency-chip"><div class="coin">🪙</div>8 420</div>
+            <div class="currency-chip"><div class="coin">💎</div>124</div>
+            <button class="top-action">⚙️ Profil</button>
+          </div>
+        </div>
+
+        <section class="screen active" id="home-screen">
+          <div class="hero">
+            <div>
+              <div class="hero-badge">🔥 ÉVÉNEMENT LIMITÉ • x2 CHANCE</div>
+              <h1>Joue. Gagne. Reviens.</h1>
+              <p>Version responsive pensée desktop d’abord, mais avec un ton de vrai jeu mobile. Le hub pousse visuellement vers la loterie tout en donnant envie de toucher chaque carte.</p>
+              <div class="hero-stats">
+                <div class="hero-pill"><span>Jackpot</span><strong>1.2M€</strong></div>
+                <div class="hero-pill"><span>Temps</span><strong id="countdownDesktop">02:14:12</strong></div>
+                <div class="hero-pill"><span>Streak</span><strong>5 jours</strong></div>
+              </div>
+              <div class="cta-row">
+                <button class="btn btn-primary" data-go="loterie">JOUER MAINTENANT</button>
+                <button class="btn btn-secondary" data-go="jeux">LANCER UN SCRATCH</button>
+              </div>
+            </div>
+            <div class="hero-side">
+              <div class="floating-card">
+                <div class="pet">🐶</div>
+                <strong>Buddy est chaud</strong>
+                <span>+12% luck aujourd’hui</span>
+                <div class="cta-row" style="margin-top:12px; justify-content:center;">
+                  <button class="btn btn-secondary" style="padding:10px 12px;">Nourrir</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="home-grid">
+            <div class="stack">
+              <div class="widget">
+                <div class="section-head">
+                  <h2>Modes de jeu</h2>
+                  <span>clique une carte</span>
+                </div>
+                <div class="game-grid">
+                  <div class="mode-card lottery" data-go="loterie">
+                    <h3>Super Loterie</h3>
+                    <p>Le mode star, énorme jackpot, parcours ultra simple.</p>
+                    <div class="bubble">🎟️</div>
+                  </div>
+                  <div class="mode-card scratch" data-go="jeux">
+                    <h3>Scratch Rush</h3>
+                    <p>Instantané, fun, tactile, satisfaisant.</p>
+                    <div class="bubble">🪄</div>
+                  </div>
+                  <div class="mode-card predict" data-go="predictions">
+                    <h3>Predict Clash</h3>
+                    <p>Choisis ton camp et grimpe au classement.</p>
+                    <div class="bubble">⚔️</div>
+                  </div>
+                  <div class="mode-card rewards" data-go="rewards">
+                    <h3>Treasure Shop</h3>
+                    <p>Boosts, tickets, skins, coffres.</p>
+                    <div class="bubble">🎁</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="widget">
+                <div class="section-head">
+                  <h2>Quêtes du jour</h2>
+                  <span>2/3 finies</span>
+                </div>
+                <div class="list">
+                  <div class="list-item"><div class="badge-icon">🎟️</div><div><strong>Jouer 1 ticket</strong><span>+50 pièces</span></div></div>
+                  <div class="list-item"><div class="badge-icon">🐶</div><div><strong>Nourrir Buddy</strong><span>+1 boost luck</span></div></div>
+                  <div class="list-item"><div class="badge-icon">⚔️</div><div><strong>Faire 1 prediction</strong><span>+30 XP</span></div></div>
+                </div>
+                <div class="progress"><div></div></div>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="widget">
+                <div class="section-head">
+                  <h2>Coffre gratuit</h2>
+                  <span>maintenant</span>
+                </div>
+                <div class="list-item"><div class="badge-icon">📦</div><div><strong>Coffre rose</strong><span>Pièces, boost et ticket bonus</span></div></div>
+                <div class="cta-row" style="margin-top:12px;"><button class="btn btn-primary">OUVRIR</button></div>
+              </div>
+
+              <div class="widget">
+                <div class="section-head">
+                  <h2>Live hype</h2>
+                  <span>maintenant</span>
+                </div>
+                <div class="list">
+                  <div class="list-item"><div class="badge-icon">🏆</div><div><strong>Mia a gagné 540€</strong><span>Il y a 2 min</span></div></div>
+                  <div class="list-item"><div class="badge-icon">✨</div><div><strong>Ton coffre est prêt</strong><span>Retour quotidien encouragé</span></div></div>
+                  <div class="list-item"><div class="badge-icon">🔥</div><div><strong>Event x2 chance actif</strong><span>Encore 2h</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="loterie-screen">
+          <div class="ticket-panel">
+            <div class="section-head">
+              <h2>Super Loterie</h2>
+              <span>mode premium</span>
+            </div>
+            <p class="muted">Sur desktop, la page respire davantage, mais garde le ton jeu mobile. Pas de formulaire froid, juste une sélection fun et directe.</p>
+            <div class="ticket-top">
+              <div class="mini-box"><span>Jackpot</span><strong>1.2M€</strong></div>
+              <div class="mini-box"><span>Ticket</span><strong>2.50€</strong></div>
+            </div>
+            <div class="cta-row">
+              <button class="btn btn-primary" id="quickPickDesktop">QUICK PICK</button>
+              <button class="btn btn-secondary" data-go="home">RETOUR AU HUB</button>
+            </div>
+            <div class="ticket-summary" id="ticketSummaryDesktop"></div>
+            <div class="ticket-grid" id="ticketGridDesktop"></div>
+            <div class="cta-row" style="margin-top:14px;">
+              <button class="btn btn-primary" id="buyBtnDesktop">ACHETER LE TICKET</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="jeux-screen">
+          <div class="scratch-panel">
+            <div class="section-head">
+              <h2>Scratch Rush</h2>
+              <span>instantané</span>
+            </div>
+            <p class="muted">Version desktop du mini-jeu, toujours très visuelle. L’idée est que même sur grand écran on ait une sensation “toy-like”.</p>
+            <div class="scratch-card">
+              <div style="font-size:3rem;">🐾</div>
+              <strong style="font-size:1.35rem; display:block; margin-top:4px;">Buddy Bonus Card</strong>
+              <div class="scratch-overlay" id="scratchOverlayDesktop">GRATTE ICI</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="predictions-screen">
+          <div class="market-panel">
+            <div class="section-head">
+              <h2>Predict Clash</h2>
+              <span>duel</span>
+            </div>
+            <p class="muted">Deux camps, une lecture immédiate, un ton jeu compétitif plutôt que dashboard de finance.</p>
+            <div class="market-card">
+              <strong>Le prochain tirage dépassera 2M€ ?</strong>
+              <div class="market-options desktop-market-options">
+                <div class="market-option active">⚡ TEAM OUI <span>62%</span></div>
+                <div class="market-option">❄️ TEAM NON <span>38%</span></div>
+              </div>
+              <div class="cta-row" style="margin-top:12px;">
+                <button class="btn btn-primary">REJOINDRE UN CAMP</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="rewards-screen">
+          <div class="rewards-panel">
+            <div class="section-head">
+              <h2>Treasure Shop</h2>
+              <span>récompenses</span>
+            </div>
+            <p class="muted">La boutique garde un ton “loot / collection / récompense”.</p>
+            <div class="reward-banner">
+              <h3>🎁 Récompense gratuite dispo</h3>
+              <p>Ouvre un mini coffre maintenant et récupère des pièces, un ticket ou un bonus de chance.</p>
+            </div>
+            <div class="reward-counters">
+              <div class="mini-box"><span>Pièces</span><strong>8 420</strong></div>
+              <div class="mini-box"><span>Gems</span><strong>124</strong></div>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="badge-icon">🎟️</div><div><strong>Ticket gratuit</strong><span>1000 pièces</span></div></div>
+              <div class="list-item"><div class="badge-icon">⚡</div><div><strong>Boost x2 chance</strong><span>500 pièces</span></div></div>
+              <div class="list-item"><div class="badge-icon">🐶</div><div><strong>Skin Buddy pirate</strong><span>120 gems</span></div></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="rightbar glass">
+        <div class="widget">
+          <h3>Compte joueur</h3>
+          <div class="list">
+            <div class="list-item"><div class="badge-icon">⭐</div><div><strong>Niveau Or III</strong><span>1 280 XP</span></div></div>
+            <div class="list-item"><div class="badge-icon">🔥</div><div><strong>Streak 5 jours</strong><span>Bonus demain</span></div></div>
+          </div>
+        </div>
+
+        <div class="widget">
+          <h3>Boosts actifs</h3>
+          <div class="list">
+            <div class="list-item"><div class="badge-icon">🍀</div><div><strong>Luck x1.12</strong><span>Buddy actif</span></div></div>
+            <div class="list-item"><div class="badge-icon">⚡</div><div><strong>Vitesse achat</strong><span>Quick flow</span></div></div>
+          </div>
+        </div>
+
+        <div class="widget">
+          <h3>Pourquoi ça marche</h3>
+          <div class="list">
+            <div class="list-item"><div class="badge-icon">1</div><div><strong>Desktop = show</strong><span>Plus d’espace, plus de mise en scène</span></div></div>
+            <div class="list-item"><div class="badge-icon">2</div><div><strong>Mobile = app</strong><span>Shell, nav fixe, gestures visuelles</span></div></div>
+            <div class="list-item"><div class="badge-icon">3</div><div><strong>Action claire</strong><span>Loterie toujours dominante</span></div></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="mobile-app">
+      <div class="phone-shell">
+        <div class="mobile-topbar">
+          <div class="avatar">😎</div>
+          <div class="player-chip">
+            <div>
+              <strong>Lucky Alex</strong>
+              <span>Arène 7 • Chasseur de jackpots</span>
+            </div>
+          </div>
+          <button class="top-action" style="padding:10px 12px;">⚙️</button>
+        </div>
+
+        <div class="mobile-currencies">
+          <div class="currency-chip"><div class="coin">🪙</div>8 420</div>
+          <div class="currency-chip"><div class="coin">💎</div>124</div>
+        </div>
+
+        <section class="screen mobile-screen active" id="mobile-home-screen">
+          <div class="hero" style="grid-template-columns:1fr; min-height:auto;">
+            <div>
+              <div class="hero-badge">🔥 ÉVÉNEMENT LIMITÉ • x2 CHANCE</div>
+              <h1 style="max-width:240px; font-size:2rem;">Joue. Gagne. Reviens.</h1>
+              <p style="max-width:230px;">Sur mobile ça doit ressembler à une vraie app, pas à un site web compressé.</p>
+              <div class="hero-stats">
+                <div class="hero-pill"><span>Jackpot</span><strong>1.2M€</strong></div>
+                <div class="hero-pill"><span>Temps</span><strong id="countdownMobile">02:14:12</strong></div>
+              </div>
+              <div class="cta-row">
+                <button class="btn btn-primary" data-mobile-go="loterie">JOUER</button>
+                <button class="btn btn-secondary" data-mobile-go="jeux">GRATTER</button>
+              </div>
+            </div>
+            <div class="floating-card" style="max-width:120px; position:absolute; top:16px; right:16px;">
+              <div class="pet" style="font-size:2.5rem; margin-bottom:4px;">🐶</div>
+              <strong style="font-size:0.88rem;">Buddy</strong>
+              <span style="font-size:0.72rem;">+12% luck</span>
+            </div>
+          </div>
+
+          <div class="widget">
+            <div class="section-head">
+              <h2>Modes de jeu</h2>
+              <span>tap</span>
+            </div>
+            <div class="game-grid">
+              <div class="mode-card lottery" data-mobile-go="loterie"><h3>Super Loterie</h3><p>Le mode star.</p><div class="bubble">🎟️</div></div>
+              <div class="mode-card scratch" data-mobile-go="jeux"><h3>Scratch Rush</h3><p>Instantané.</p><div class="bubble">🪄</div></div>
+              <div class="mode-card predict" data-mobile-go="predictions"><h3>Predict Clash</h3><p>Choisis ton camp.</p><div class="bubble">⚔️</div></div>
+              <div class="mode-card rewards" data-mobile-go="rewards"><h3>Treasure Shop</h3><p>Boosts & coffres.</p><div class="bubble">🎁</div></div>
+            </div>
+          </div>
+
+          <div class="widget">
+            <div class="section-head"><h2>Quêtes du jour</h2><span>2/3</span></div>
+            <div class="list">
+              <div class="list-item"><div class="badge-icon">🎟️</div><div><strong>Jouer 1 ticket</strong><span>+50 pièces</span></div></div>
+              <div class="list-item"><div class="badge-icon">🐶</div><div><strong>Nourrir Buddy</strong><span>+1 boost luck</span></div></div>
+            </div>
+            <div class="progress"><div></div></div>
+          </div>
+        </section>
+
+        <section class="screen mobile-screen" id="mobile-loterie-screen">
+          <div class="ticket-panel">
+            <div class="section-head"><h2>Super Loterie</h2><span>premium</span></div>
+            <div class="ticket-top">
+              <div class="mini-box"><span>Jackpot</span><strong>1.2M€</strong></div>
+              <div class="mini-box"><span>Ticket</span><strong>2.50€</strong></div>
+            </div>
+            <div class="cta-row">
+              <button class="btn btn-primary" id="quickPickMobile">QUICK PICK</button>
+            </div>
+            <div class="ticket-summary" id="ticketSummaryMobile"></div>
+            <div class="ticket-grid" id="ticketGridMobile"></div>
+            <div class="cta-row" style="margin-top:14px;"><button class="btn btn-primary" id="buyBtnMobile">ACHETER</button></div>
+          </div>
+        </section>
+
+        <section class="screen mobile-screen" id="mobile-jeux-screen">
+          <div class="scratch-panel">
+            <div class="section-head"><h2>Scratch Rush</h2><span>fun</span></div>
+            <div class="scratch-card">
+              <div style="font-size:3rem;">🐾</div>
+              <strong style="font-size:1.3rem; display:block; margin-top:4px;">Buddy Bonus Card</strong>
+              <div class="scratch-overlay" id="scratchOverlayMobile">GRATTE ICI</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen mobile-screen" id="mobile-predictions-screen">
+          <div class="market-panel">
+            <div class="section-head"><h2>Predict Clash</h2><span>duel</span></div>
+            <div class="market-card">
+              <strong>Le prochain tirage dépassera 2M€ ?</strong>
+              <div class="market-options mobile-market-options">
+                <div class="market-option active">⚡ TEAM OUI <span>62%</span></div>
+                <div class="market-option">❄️ TEAM NON <span>38%</span></div>
+              </div>
+              <div class="cta-row" style="margin-top:12px;"><button class="btn btn-primary">REJOINDRE</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen mobile-screen" id="mobile-rewards-screen">
+          <div class="rewards-panel">
+            <div class="section-head"><h2>Treasure Shop</h2><span>loot</span></div>
+            <div class="reward-banner">
+              <h3>🎁 Récompense gratuite dispo</h3>
+              <p>Mini coffre prêt à être ouvert.</p>
+            </div>
+            <div class="list" style="margin-top:14px;">
+              <div class="list-item"><div class="badge-icon">🎟️</div><div><strong>Ticket gratuit</strong><span>1000 pièces</span></div></div>
+              <div class="list-item"><div class="badge-icon">⚡</div><div><strong>Boost x2 chance</strong><span>500 pièces</span></div></div>
+              <div class="list-item"><div class="badge-icon">🐶</div><div><strong>Skin Buddy pirate</strong><span>120 gems</span></div></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="active" data-mobile-go="home">🏠<br>Hub</button>
+    <button data-mobile-go="loterie">🎟️<br>Loterie</button>
+    <button data-mobile-go="jeux">🪄<br>Jeux</button>
+    <button data-mobile-go="predictions">⚔️<br>Clash</button>
+    <button data-mobile-go="rewards">🎁<br>Shop</button>
+  </nav>
+
+  <script>
+    const desktopScreens = {
+      home: document.getElementById('home-screen'),
+      loterie: document.getElementById('loterie-screen'),
+      jeux: document.getElementById('jeux-screen'),
+      predictions: document.getElementById('predictions-screen'),
+      rewards: document.getElementById('rewards-screen')
+    };
+
+    const mobileScreens = {
+      home: document.getElementById('mobile-home-screen'),
+      loterie: document.getElementById('mobile-loterie-screen'),
+      jeux: document.getElementById('mobile-jeux-screen'),
+      predictions: document.getElementById('mobile-predictions-screen'),
+      rewards: document.getElementById('mobile-rewards-screen')
+    };
+
+    function setDesktopScreen(name) {
+      Object.entries(desktopScreens).forEach(([key, node]) => {
+        node.classList.toggle('active', key === name);
+      });
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.go === name);
+      });
+    }
+
+    function setMobileScreen(name) {
+      Object.entries(mobileScreens).forEach(([key, node]) => {
+        node.classList.toggle('active', key === name);
+      });
+      document.querySelectorAll('.bottom-nav button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mobileGo === name);
+      });
+    }
+
+    document.querySelectorAll('[data-go]').forEach(btn => {
+      btn.addEventListener('click', () => setDesktopScreen(btn.dataset.go));
+    });
+
+    document.querySelectorAll('[data-mobile-go]').forEach(btn => {
+      btn.addEventListener('click', () => setMobileScreen(btn.dataset.mobileGo));
+    });
+
+    function initTicketGame(gridId, summaryId, quickId, buyId, max = 25) {
+      const grid = document.getElementById(gridId);
+      const summary = document.getElementById(summaryId);
+      const quick = document.getElementById(quickId);
+      const buy = document.getElementById(buyId);
+      let selected = [];
+
+      function renderSummary() {
+        summary.innerHTML = '';
+        selected.slice().sort((a, b) => a - b).forEach(n => {
+          const chip = document.createElement('div');
+          chip.className = 'ticket-chip';
+          chip.textContent = n;
+          summary.appendChild(chip);
+        });
+      }
+
+      function syncGrid() {
+        grid.querySelectorAll('.number').forEach(btn => {
+          btn.classList.toggle('selected', selected.includes(Number(btn.textContent)));
+        });
+      }
+
+      function toggleNum(num) {
+        if (selected.includes(num)) {
+          selected = selected.filter(n => n !== num);
+        } else {
+          if (selected.length >= 5) return;
+          selected.push(num);
+        }
+        renderSummary();
+        syncGrid();
+      }
+
+      for (let i = 1; i <= max; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'number';
+        btn.textContent = i;
+        btn.addEventListener('click', () => toggleNum(i));
+        grid.appendChild(btn);
+      }
+
+      quick.addEventListener('click', () => {
+        selected = [];
+        const pool = Array.from({ length: max }, (_, i) => i + 1);
+        while (selected.length < 5) {
+          const idx = Math.floor(Math.random() * pool.length);
+          selected.push(pool.splice(idx, 1)[0]);
+        }
+        renderSummary();
+        syncGrid();
+      });
+
+      buy.addEventListener('click', () => {
+        if (selected.length < 5) {
+          alert('Choisis 5 numéros pour lancer ton ticket.');
+          return;
+        }
+        alert('Ticket prêt ! Ici tu peux brancher ton tunnel d’achat.');
+      });
+    }
+
+    initTicketGame('ticketGridDesktop', 'ticketSummaryDesktop', 'quickPickDesktop', 'buyBtnDesktop');
+    initTicketGame('ticketGridMobile', 'ticketSummaryMobile', 'quickPickMobile', 'buyBtnMobile');
+
+    function initScratch(id) {
+      const el = document.getElementById(id);
+      el.addEventListener('click', () => {
+        const rewards = ['🎉 +12€', '🪙 +250 pièces', '✨ +1 boost chance', '🎟️ ticket bonus'];
+        el.classList.add('revealed');
+        el.textContent = rewards[Math.floor(Math.random() * rewards.length)];
+      });
+    }
+
+    initScratch('scratchOverlayDesktop');
+    initScratch('scratchOverlayMobile');
+
+    function initMarket(selector) {
+      document.querySelectorAll(selector + ' .market-option').forEach(option => {
+        option.addEventListener('click', () => {
+          document.querySelectorAll(selector + ' .market-option').forEach(o => o.classList.remove('active'));
+          option.classList.add('active');
+        });
+      });
+    }
+
+    initMarket('.desktop-market-options');
+    initMarket('.mobile-market-options');
+
+    let remaining = 2 * 3600 + 14 * 60 + 12;
+    function updateCountdown() {
+      const h = String(Math.floor(remaining / 3600)).padStart(2, '0');
+      const m = String(Math.floor((remaining % 3600) / 60)).padStart(2, '0');
+      const s = String(remaining % 60).padStart(2, '0');
+      const desktop = document.getElementById('countdownDesktop');
+      const mobile = document.getElementById('countdownMobile');
+      if (desktop) desktop.textContent = `${h}:${m}:${s}`;
+      if (mobile) mobile.textContent = `${h}:${m}:${s}`;
+      if (remaining > 0) remaining--;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    setDesktopScreen('home');
+    setMobileScreen('home');
+  </script>
+</body>
+</html>
